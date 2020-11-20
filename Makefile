@@ -1,30 +1,24 @@
 INSTALL_PREFIX?=../install
 
-ifeq (clang,$(TOOLCHAIN))
-	BUILD_NAME?=build-clang
-	BUILD_DIR?=../cmake.bld/$(shell basename $(CURDIR))
-	BUILD_PATH?=$(BUILD_DIR)/$(BUILD_NAME)
-	BUILD_TYPE?=RelWithDebInfo
-	CMAKE_ARGS=-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
-else ifeq (clang-master,$(TOOLCHAIN))
-	BUILD_NAME?=build-clang-master
-	BUILD_DIR?=../cmake.bld/$(shell basename $(CURDIR))
-	BUILD_PATH?=$(BUILD_DIR)/$(BUILD_NAME)
-	BUILD_TYPE?=RelWithDebInfo
-	export LLVM_ROOT?=~/install/llvm-master
-	CMAKE_ARGS=-DCMAKE_TOOLCHAIN_FILE=$(CURDIR)/etc/llvm-master-toolchain.cmake
-else
+ifeq ($(strip $(TOOLCHAIN)),)
 	BUILD_NAME?=build
 	BUILD_DIR?=../cmake.bld/$(shell basename $(CURDIR))
 	BUILD_PATH?=$(BUILD_DIR)/$(BUILD_NAME)
 	BUILD_TYPE?=RelWithDebInfo
+else
+	BUILD_NAME?=build-$(TOOLCHAIN)
+	BUILD_DIR?=../cmake.bld/$(shell basename $(CURDIR))
+	BUILD_PATH?=$(BUILD_DIR)/$(BUILD_NAME)
+	BUILD_TYPE?=RelWithDebInfo
+	CMAKE_ARGS=-DCMAKE_TOOLCHAIN_FILE=$(CURDIR)/etc/$(TOOLCHAIN)-toolchain.cmake
 endif
 
 define run_cmake =
 	cmake \
-	-G "Unix Makefiles" \
+	-G "Ninja" \
 	-DCMAKE_BUILD_TYPE=$(BUILD_TYPE) \
 	-DCMAKE_INSTALL_PREFIX=$(abspath $(INSTALL_PREFIX)) \
+	-DCMAKE_EXPORT_COMPILE_COMMANDS=1 \
 	$(CMAKE_ARGS) \
 	$(CURDIR)
 endef
@@ -38,10 +32,10 @@ $(BUILD_PATH)/CMakeCache.txt: | $(BUILD_PATH)
 	cd $(BUILD_PATH) && $(run_cmake)
 
 build: $(BUILD_PATH)/CMakeCache.txt
-	cd $(BUILD_PATH) && make -k
+	cd $(BUILD_PATH) && ninja -k 0
 
 install: $(BUILD_PATH)/CMakeCache.txt
-	cd $(BUILD_PATH) && make install
+	cd $(BUILD_PATH) && ninja install
 
 ctest: $(BUILD_PATH)/CMakeCache.txt
 	cd $(BUILD_PATH) && ctest
@@ -55,7 +49,7 @@ cmake: | $(BUILD_PATH)
 	cd $(BUILD_PATH) && $(run-cmake)
 
 clean: $(BUILD_PATH)/CMakeCache.txt
-	cd $(BUILD_PATH) && make clean
+	cd $(BUILD_PATH) && ninja clean
 
 realclean:
 	rm -rf $(BUILD_PATH)

@@ -31,7 +31,6 @@ int func3(int i, int j) {
     return i + j;
 }
 } // namespace
-} // namespace testing
 
 std::string stringTest(const char* str) { return str; }
 
@@ -42,6 +41,7 @@ TEST(Co_FunThunkTest, Breathing) {
 
     EXPECT_EQ(1, j);
 
-    // Thunk<int> D2(func);
-    // EXPECT_EQ(0, func_called);
+    Thunk<int> D2(func);
+    EXPECT_EQ(0, func_called);
 }
+} // namespace testing

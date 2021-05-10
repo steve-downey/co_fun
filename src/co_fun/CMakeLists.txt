@@ -3,7 +3,8 @@ add_library(co_fun STATIC "")
 target_sources(
   co_fun
   PRIVATE
-  co_fun.cpp)
+  co_fun.cpp
+  thunk.cpp)
 
 include(GNUInstallDirs)
 
@@ -33,7 +34,8 @@ add_executable(co_fun_test "")
 target_sources(
   co_fun_test
   PRIVATE
-  co_fun.t.cpp)
+  co_fun.t.cpp
+  thunk.t.cpp)
 
 target_link_libraries(co_fun_test co_fun)
 target_link_libraries(co_fun_test gtest)

@@ -1,19 +1,19 @@
-add_library(scratch STATIC "")
+add_library(co_fun STATIC "")
 
 target_sources(
-  scratch
+  co_fun
   PRIVATE
-  scratch.cpp)
+  co_fun.cpp)
 
 include(GNUInstallDirs)
 
-target_include_directories(scratch PUBLIC
+target_include_directories(co_fun PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${CMAKE_LOWER_PROJECT_NAME}>  # <prefix>/include/scratch
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${CMAKE_LOWER_PROJECT_NAME}>  # <prefix>/include/co_fun
   )
 
 install(
-  TARGETS scratch
+  TARGETS co_fun
   EXPORT ${TARGETS_EXPORT_NAME}
   DESTINATION ${CMAKE_INSTALL_LIBDIR}
   )
@@ -28,16 +28,16 @@ install(
 
 
 ## Tests
-add_executable(scratch_test "")
+add_executable(co_fun_test "")
 
 target_sources(
-  scratch_test
+  co_fun_test
   PRIVATE
-  scratch.t.cpp)
+  co_fun.t.cpp)
 
-target_link_libraries(scratch_test scratch)
-target_link_libraries(scratch_test gtest)
-target_link_libraries(scratch_test gtest_main)
+target_link_libraries(co_fun_test co_fun)
+target_link_libraries(co_fun_test gtest)
+target_link_libraries(co_fun_test gtest_main)
 
 include(GoogleTest)
-gtest_discover_tests(scratch_test)
+gtest_discover_tests(co_fun_test)

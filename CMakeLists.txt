@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(Scratch VERSION 0.0.0 LANGUAGES CXX)
+project(Co_Fun VERSION 0.0.0 LANGUAGES CXX)
 
 enable_testing()
 

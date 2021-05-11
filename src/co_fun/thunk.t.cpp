@@ -21,6 +21,11 @@ int func() {
     return 5;
 }
 
+Thunk<int> co_func() {
+    func_called++;
+    co_return 5;
+}
+
 int func2(int i) {
     func2_called++;
     return i;
@@ -35,13 +40,23 @@ int func3(int i, int j) {
 std::string stringTest(const char* str) { return str; }
 
 TEST(Co_FunThunkTest, Breathing) {
-    Thunk<int> thunk(1);
+    // Thunk<int> thunk(1);
 
-    int j{thunk};
+    // int j{thunk};
 
-    EXPECT_EQ(1, j);
+    // EXPECT_EQ(1, j);
 
-    Thunk<int> D2(func);
-    EXPECT_EQ(0, func_called);
+    Thunk<int> D2 = co_func();
+    // EXPECT_EQ(0, func_called);
+    // int i = D2;
+    // EXPECT_EQ(i, 5);
+    // EXPECT_EQ(1, func_called);
+
+    // int i2 = D2;
+    // EXPECT_EQ(i2, 5);
+    // EXPECT_EQ(1, func_called);
+
+    //    Thunk<int> D3 = D2;
 }
+
 } // namespace testing

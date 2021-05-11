@@ -5,6 +5,7 @@ set(CMAKE_CXX_COMPILER g++-10)
 
 set(CMAKE_CXX_FLAGS
   "-std=c++20 \
+   -fcoroutines \
    -Wall -Wextra "
 CACHE STRING "CXX_FLAGS" FORCE)
 

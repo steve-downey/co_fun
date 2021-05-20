@@ -11,20 +11,21 @@
 //@DESCRIPTION:
 
 #include <coroutine>
-#include <optional>
 #include <memory>
+
+#include <co_fun/holder.h>
 
 namespace co_fun {
 
 template <typename R>
 class Thunk {
     struct promise_type {
-        std::optional<R> r_;
+        co_fun::holder<R> r_;
 
         auto get_return_object() { return Thunk(this); }
 
         auto return_value(R v) {
-            r_.emplace(std::move(v));
+            r_.set_value(std::move(v));
             return std::suspend_always();
         }
 
@@ -32,7 +33,7 @@ class Thunk {
 
         std::suspend_always initial_suspend() noexcept { return {}; }
 
-        std::suspend_always final_suspend() noexcept { return {}; }
+        std::suspend_never final_suspend() noexcept { return {}; }
 
         auto handle() {
             return std::coroutine_handle<promise_type>::from_promise(*this);

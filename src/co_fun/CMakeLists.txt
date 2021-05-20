@@ -4,7 +4,9 @@ target_sources(
   co_fun
   PRIVATE
   co_fun.cpp
-  thunk.cpp)
+  lazy.cpp
+  thunk.cpp
+  holder.cpp)
 
 include(GNUInstallDirs)
 
@@ -35,7 +37,9 @@ target_sources(
   co_fun_test
   PRIVATE
   co_fun.t.cpp
-  thunk.t.cpp)
+  lazy.t.cpp
+  thunk.t.cpp
+  holder.t.cpp)
 
 target_link_libraries(co_fun_test co_fun)
 target_link_libraries(co_fun_test gtest)

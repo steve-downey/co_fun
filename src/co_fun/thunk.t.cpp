@@ -35,9 +35,8 @@ int func3(int i, int j) {
     func3_called++;
     return i + j;
 }
-} // namespace
-
 std::string stringTest(const char* str) { return str; }
+} // namespace
 
 TEST(Co_FunThunkTest, Breathing) {
     // Thunk<int> thunk(1);

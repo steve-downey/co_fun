@@ -6,7 +6,8 @@ target_sources(
   co_fun.cpp
   lazy.cpp
   thunk.cpp
-  holder.cpp)
+  holder.cpp
+  stream.cpp)
 
 include(GNUInstallDirs)
 
@@ -39,7 +40,8 @@ target_sources(
   co_fun.t.cpp
   lazy.t.cpp
   thunk.t.cpp
-  holder.t.cpp)
+  holder.t.cpp
+  stream.t.cpp)
 
 target_link_libraries(co_fun_test co_fun)
 target_link_libraries(co_fun_test gtest)

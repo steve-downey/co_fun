@@ -90,7 +90,7 @@ Value const& evaluate(Lazy<Value>&& lazy) {
 }
 
 template <typename F, typename... Args>
-auto lazy(F&& f, Args&&... args) -> Lazy<std::invoke_result_t<F, Args...>> {
+auto lazy(F f, Args... args) -> Lazy<std::invoke_result_t<F, Args...>> {
     co_return std::invoke(f, args...);
 }
 

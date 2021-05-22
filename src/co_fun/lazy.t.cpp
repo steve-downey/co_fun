@@ -61,23 +61,9 @@ TEST(Co_FunLazyTest, Breathing) {
     EXPECT_EQ(1, func_called);
 }
 
-// template <typename Value>
-// Value  force(Lazy<Value> const& lazy) {
-//     return lazy;
-// }
-
-// template <typename Value>
-// Value const& force(Lazy<Value>&& lazy) {
-//     return std::move(lazy);
-// }
-
-template <typename F, typename... Args>
-auto lazy(F&& f, Args&&... args) -> Lazy<std::invoke_result_t<F, Args...>> {
-    co_return std::invoke(f, args...);
-}
 
 TEST(Co_FunLazyTest, MoveTest) {
-    std::string        str;
+    std::string       str;
     Lazy<std::string> d1(str);
     Lazy<std::string> d2("test");
     Lazy<std::string> d3 = lazy(stringTest, "this is a test");
@@ -88,11 +74,33 @@ TEST(Co_FunLazyTest, MoveTest) {
     EXPECT_FALSE(d3.evaluated());
     std::string s = d3;
     EXPECT_EQ(std::string("this is a test"), s);
-    //    EXPECT_FALSE(d4.isForced());
 
     Lazy<std::string> d4 = lazy(stringTest, "this is another test");
     EXPECT_EQ(std::string("this is another test"), evaluate(d4));
-    //    EXPECT_EQ(std::string("another test"), force(d4));
+
+    Lazy<std::string> d5 = lazy(stringTest, "this is another test");
+    Lazy<std::string> d6 = std::move(d5);
+    EXPECT_EQ(std::string("this is another test"), evaluate(d6));
 }
 
+Lazy<int> test(int k) {
+    return lazy([k]() { func_called++; return k; });
+}
+
+TEST(Co_FunLazyTest, IndirectTest) {
+    func_called = 0;
+    auto l = lazy([](){return func();});
+    EXPECT_FALSE(l.evaluated());
+    EXPECT_EQ(0, func_called);
+    int i = l;
+    EXPECT_EQ(i, 5);
+    EXPECT_EQ(1, func_called);
+
+    auto l2 = test(9);
+    EXPECT_FALSE(l2.evaluated());
+    EXPECT_EQ(1, func_called);
+    int i2 = l2;
+    EXPECT_EQ(i2, 9);
+    EXPECT_EQ(2, func_called);
+}
 } // namespace testing

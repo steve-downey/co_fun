@@ -30,6 +30,8 @@ $(BUILD_PATH):
 
 $(BUILD_PATH)/CMakeCache.txt: | $(BUILD_PATH)
 	cd $(BUILD_PATH) && $(run_cmake)
+	-rm compile_commands.json
+	ln -s $(BUILD_PATH)/compile_commands.json
 
 build: $(BUILD_PATH)/CMakeCache.txt
 	cd $(BUILD_PATH) && ninja -k 0

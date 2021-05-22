@@ -67,8 +67,26 @@ class Thunk {
 
     ~Thunk() = default;
 
-    bool evaluated() const { return r_ && !r_->is_empty(); }
+    Thunk& operator=(const Thunk& rhs) {
+        p_ = rhs.p_;
+        r_ = rhs.r_;
+        return *this;
+    }
 
+    bool operator==(const Thunk& rhs) const {
+        if (r_ == rhs.r_)
+            return true;
+        return false;
+    }
+    bool operator!=(const Thunk& rhs) const {
+        if (r_ == rhs.r_)
+            return false;
+        return true;
+    }
+    bool evaluated() const { return r_ && !r_->is_empty(); }
+    bool isEmpty() const {
+        return (p_ == nullptr) && (r_ == nullptr || r_->is_empty());
+    }
     R const& get() const {
         if (!evaluated()) {
             p_->handle().resume();

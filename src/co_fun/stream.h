@@ -37,7 +37,7 @@ class ConsCell {
 
 template <typename Value>
 class ConsStream {
-    std::shared_ptr<Thunk<ConsCell<Value>>> thunked_cell_;
+    Thunk<ConsCell<Value>> thunked_cell_;
 
     friend class ConsStreamIterator<Value>;
 
@@ -47,11 +47,11 @@ class ConsStream {
     ConsStream() = default;
 
     ConsStream(Value const& value)
-        : thunked_cell_(std::make_shared<Thunk<ConsCell<Value>>>(
+        : thunked_cell_(Thunk<ConsCell<Value>>(
               thunk([value]() { return ConsCell<Value>(value); }))) {}
 
     ConsStream(Value&& value)
-        : thunked_cell_(std::make_shared<Thunk<ConsCell<Value>>>(
+        : thunked_cell_(Thunk<ConsCell<Value>>(
               thunk([v = std::forward<Value>(value)]() {
                   return ConsCell<Value>(v);
               }))) {}
@@ -60,15 +60,15 @@ class ConsStream {
               typename = typename std::enable_if<
                   !std::is_convertible<Func, ConsStream>::value>::type>
     ConsStream(Func&& f)
-        : thunked_cell_(std::make_shared<Thunk<ConsCell<Value>>>(thunk(f))) {
+        : thunked_cell_(Thunk<ConsCell<Value>>(thunk(f))) {
         std::cout << "here\n";
     }
 
-    bool isEmpty() const { return !thunked_cell_; }
+    bool isEmpty() const { return thunked_cell_.isEmpty(); }
 
-    Value head() const { return evaluate(*thunked_cell_).head(); }
+    Value head() const { return evaluate(thunked_cell_).head(); }
 
-    ConsStream<Value> tail() const { return evaluate(*thunked_cell_).tail(); }
+    ConsStream<Value> tail() const { return evaluate(thunked_cell_).tail(); }
 
     using iterator = ConsStreamIterator<Value>;
 
@@ -77,15 +77,15 @@ class ConsStream {
     iterator end() { return iterator(); }
 
     int countEvaluated() {
-        if (!thunked_cell_) {
+        if (thunked_cell_.isEmpty()) {
             return 0;
         }
 
         auto cell      = thunked_cell_;
         int  evaluated = 0;
-        while (cell && cell->evaluated()) {
+        while (!cell.isEmpty() && cell.evaluated()) {
             ++evaluated;
-            cell = cell->get().tail().thunked_cell_;
+            cell = cell.get().tail().thunked_cell_;
         }
         return evaluated;
     }
@@ -131,9 +131,9 @@ class ConsStreamIterator : public std::iterator<std::forward_iterator_tag,
                                                 std::ptrdiff_t,
                                                 Value*,
                                                 Value&> {
-    std::shared_ptr<Thunk<ConsCell<Value>>> thunked_cell_;
+    Thunk<ConsCell<Value>> thunked_cell_;
 
-    explicit ConsStreamIterator(std::shared_ptr<Thunk<ConsCell<Value>>> cell)
+    explicit ConsStreamIterator(Thunk<ConsCell<Value>> cell)
         : thunked_cell_(cell) {}
 
     friend class ConsStream<Value>;
@@ -148,14 +148,14 @@ class ConsStreamIterator : public std::iterator<std::forward_iterator_tag,
 
     ConsStreamIterator& operator++() // Pre-increment
     {
-        thunked_cell_ = evaluate(*thunked_cell_).tail().thunked_cell_;
+        thunked_cell_ = evaluate(thunked_cell_).tail().thunked_cell_;
         return *this;
     }
 
     ConsStreamIterator operator++(int) // Post-increment
     {
         ConsStreamIterator tmp(*this);
-        thunked_cell_ = evaluate(*thunked_cell_).tail().thunked_cell_;
+        thunked_cell_ = evaluate(thunked_cell_).tail().thunked_cell_;
         return tmp;
     }
 
@@ -170,9 +170,9 @@ class ConsStreamIterator : public std::iterator<std::forward_iterator_tag,
         return thunked_cell_ != rhs.thunked_cell_;
     }
 
-    Value const& operator*() const { return evaluate(*thunked_cell_).head_; }
+    Value const& operator*() const { return evaluate(thunked_cell_).head_; }
 
-    Value const* operator->() const { return &evaluate(*thunked_cell_).head_; }
+    Value const* operator->() const { return &evaluate(thunked_cell_).head_; }
 };
 
 template <typename Value>

@@ -59,29 +59,36 @@ TEST(Co_FunThunkTest, Breathing) {
     EXPECT_EQ(1, func_called);
 }
 
+TEST(Co_FunThunkTest, Assignment) {
+    Thunk<int> t3(3);
+    Thunk<int> t1;
+    t1 = t3;
+}
+
 TEST(Co_FunThunkTest, Move) {
-    std::string        str;
-    Thunk<std::string> d1(str);
-    Thunk<std::string> d2("test");
-    Thunk<std::string> d3 = thunk(stringTest, "this is a test");
-    //    Thunk<std::string> d4([]() { return stringTest("another test"); });
+        std::string        str;
+        Thunk<std::string> d1(str);
+        Thunk<std::string> d2("test");
+        Thunk<std::string> d3 = thunk(stringTest, "this is a test");
+        //    Thunk<std::string> d4([]() { return stringTest("another test");
+        //    });
 
-    EXPECT_TRUE(d1.evaluated());
-    EXPECT_TRUE(d2.evaluated());
-    EXPECT_FALSE(d3.evaluated());
-    // EXPECT_FALSE(d4.evaluated());
+        EXPECT_TRUE(d1.evaluated());
+        EXPECT_TRUE(d2.evaluated());
+        EXPECT_FALSE(d3.evaluated());
+        // EXPECT_FALSE(d4.evaluated());
 
-    EXPECT_EQ(std::string("this is a test"), evaluate(d3));
- //    EXPECT_EQ(std::string("another test"), force(d4));
-}
+        EXPECT_EQ(std::string("this is a test"), evaluate(d3));
+        //    EXPECT_EQ(std::string("another test"), force(d4));
+    }
 
-TEST(Co_FunThunkTest, Sharing) {
-    Thunk<int> thunk = co_func();
-    Thunk t2 = thunk;
-    Thunk t3 = t2;
+    TEST(Co_FunThunkTest, Sharing) {
+        Thunk<int> thunk = co_func();
+        Thunk      t2    = thunk;
+        Thunk      t3    = t2;
 
-    int k = thunk;
-    EXPECT_EQ(k, 5);
-    EXPECT_TRUE(t3.evaluated());
-}
+        int k = thunk;
+        EXPECT_EQ(k, 5);
+        EXPECT_TRUE(t3.evaluated());
+    }
 } // namespace testing

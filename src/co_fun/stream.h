@@ -51,18 +51,15 @@ class ConsStream {
               thunk([value]() { return ConsCell<Value>(value); }))) {}
 
     ConsStream(Value&& value)
-        : thunked_cell_(Thunk<ConsCell<Value>>(
-              thunk([v = std::forward<Value>(value)]() {
+        : thunked_cell_(
+              Thunk<ConsCell<Value>>(thunk([v = std::forward<Value>(value)]() {
                   return ConsCell<Value>(v);
               }))) {}
 
     template <typename Func,
               typename = typename std::enable_if<
                   !std::is_convertible<Func, ConsStream>::value>::type>
-    ConsStream(Func&& f)
-        : thunked_cell_(Thunk<ConsCell<Value>>(thunk(f))) {
-        std::cout << "here\n";
-    }
+    ConsStream(Func&& f) : thunked_cell_(Thunk<ConsCell<Value>>(thunk(f))) {}
 
     bool isEmpty() const { return thunked_cell_.isEmpty(); }
 
@@ -105,12 +102,8 @@ struct Make {
 template <typename Value>
 struct Make<ConsStream, Value> {
     typedef typename std::decay<Value>::type V;
-    ConsStream<V>                            operator()(Value const& v) {
-        return ConsStream<V>(v);
-    }
-    ConsStream<V> operator()(V&& v) {
-        return ConsStream<V>(v);
-    }
+    ConsStream<V> operator()(Value const& v) { return ConsStream<V>(v); }
+    ConsStream<V> operator()(V&& v) { return ConsStream<V>(v); }
 };
 
 template <template <typename> typename Applicative, typename Value>

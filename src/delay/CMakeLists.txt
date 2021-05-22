@@ -44,3 +44,13 @@ target_link_libraries(delay_test gtest_main)
 
 include(GoogleTest)
 gtest_discover_tests(delay_test)
+
+add_executable(
+  delay_benchmark
+  stream.b.cpp
+  streamasync.b.cpp
+  )
+
+target_link_libraries(delay_benchmark benchmark delay)
+
+add_test(delay_benchmark delay_benchmark --benchmark_min_time=0.01)

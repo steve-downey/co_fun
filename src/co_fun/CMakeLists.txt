@@ -49,3 +49,12 @@ target_link_libraries(co_fun_test gtest_main)
 
 include(GoogleTest)
 gtest_discover_tests(co_fun_test)
+
+add_executable(
+  co_fun_benchmark
+  stream.b.cpp
+  )
+
+target_link_libraries(co_fun_benchmark benchmark delay)
+
+add_test(co_fun_benchmark co_fun_benchmark --benchmark_min_time=0.01)

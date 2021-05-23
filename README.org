@@ -1,0 +1,31 @@
+* CO_FUN
+
+** Fun and Functional programming with C++20 Corotines
+
+<To Be Written>
+
+** Building
+
+There's a decent chance that `make` will work. Otherwise try something like
+
+``` shell
+make -k TOOLCHAIN=gcc-11 BUILD_TYPE=RelWithDebInfo
+```
+
+The makefile is there to drive the cmake build through its states. It's not complicated, nor necessary.
+
+** Code organization
+   - src/delay :: delayed evaluation circa 2015 (Meh)
+   - src/co_fun :: new fun code using coroutines
+
+** Components
+*** Holder
+    Used to hold the pending results for the coroutine
+
+    Based on the holder described in "The Old New Thing"
+*** Lazy
+    A coroutine promise holder that mediates the result of a single function call.
+*** Thunk
+    A result of a function call that when you think you want the result, it may already have been thunk. Shareable.
+*** Stream
+    Fun with suspended function calls. A cons cell is a value and a thunk to the next value. A cons stream is a series of lazy values. From this, the list monad is built, and much of `do` notation desugaring. ConsStream models a range.

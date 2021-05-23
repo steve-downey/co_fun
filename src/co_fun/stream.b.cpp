@@ -98,7 +98,7 @@ static void BM_Bind(benchmark::State& state) {
             state.ResumeTiming();
             l = 0;
             ConsStream<int> c =
-                take(bind2(iota(0), [](int i) { return rangeFrom(0, i); }), x);
+                take(bind(iota(0), [](int i) { return rangeFrom(0, i); }), x);
             l = last(c);
             state.PauseTiming();
         }

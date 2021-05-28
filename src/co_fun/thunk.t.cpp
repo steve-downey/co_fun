@@ -66,29 +66,62 @@ TEST(Co_FunThunkTest, Assignment) {
 }
 
 TEST(Co_FunThunkTest, Move) {
-        std::string        str;
-        Thunk<std::string> d1(str);
-        Thunk<std::string> d2("test");
-        Thunk<std::string> d3 = thunk(stringTest, "this is a test");
-        //    Thunk<std::string> d4([]() { return stringTest("another test");
-        //    });
+    std::string        str;
+    Thunk<std::string> d1(str);
+    Thunk<std::string> d2("test");
+    Thunk<std::string> d3 = thunk(stringTest, "this is a test");
+    //    Thunk<std::string> d4([]() { return stringTest("another test");
+    //    });
 
-        EXPECT_TRUE(d1.evaluated());
-        EXPECT_TRUE(d2.evaluated());
-        EXPECT_FALSE(d3.evaluated());
-        // EXPECT_FALSE(d4.evaluated());
+    EXPECT_TRUE(d1.evaluated());
+    EXPECT_TRUE(d2.evaluated());
+    EXPECT_FALSE(d3.evaluated());
+    // EXPECT_FALSE(d4.evaluated());
 
-        EXPECT_EQ(std::string("this is a test"), evaluate(d3));
-        //    EXPECT_EQ(std::string("another test"), force(d4));
+    EXPECT_EQ(std::string("this is a test"), evaluate(d3));
+    //    EXPECT_EQ(std::string("another test"), force(d4));
+}
+
+TEST(Co_FunThunkTest, Sharing) {
+    Thunk<int> thunk = co_func();
+    Thunk      t2    = thunk;
+    Thunk      t3    = t2;
+
+    int k = thunk;
+    EXPECT_EQ(k, 5);
+    EXPECT_TRUE(t3.evaluated());
+}
+
+struct watch_destruction {
+    static int destructor_counter;
+
+    ~watch_destruction() { ++destructor_counter; }
+};
+
+int watch_destruction::destructor_counter = 0;
+
+Thunk<int> test_destruction(watch_destruction w) {
+    co_return w.destructor_counter;
+}
+
+TEST(Co_FunThunkTest, Leak) {
+    watch_destruction::destructor_counter = 0;
+    {
+        auto t = test_destruction(watch_destruction{});
+        EXPECT_EQ(watch_destruction::destructor_counter, 1);
+        int i = t;
+        EXPECT_EQ(i, 1);
+        EXPECT_EQ(watch_destruction::destructor_counter, 2);
     }
-
-    TEST(Co_FunThunkTest, Sharing) {
-        Thunk<int> thunk = co_func();
-        Thunk      t2    = thunk;
-        Thunk      t3    = t2;
-
-        int k = thunk;
-        EXPECT_EQ(k, 5);
-        EXPECT_TRUE(t3.evaluated());
+    EXPECT_EQ(watch_destruction::destructor_counter, 2);
+    watch_destruction::destructor_counter = 0;
+    {
+        auto t2 = thunk(test_destruction, watch_destruction{});
+        EXPECT_EQ(watch_destruction::destructor_counter, 1);
+        // No evaluation of thunk - potential leak
     }
+    EXPECT_EQ(watch_destruction::destructor_counter, 2);
+}
+
+
 } // namespace testing

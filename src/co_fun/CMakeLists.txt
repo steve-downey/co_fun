@@ -56,5 +56,3 @@ add_executable(
   )
 
 target_link_libraries(co_fun_benchmark benchmark delay)
-
-add_test(co_fun_benchmark co_fun_benchmark --benchmark_min_time=0.01)

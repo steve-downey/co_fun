@@ -21,29 +21,12 @@ namespace co_fun {
 
 template <typename R>
 class Lazy {
-    struct promise_type {
+    struct promise_type : public holder_promise_type<R> {
         auto get_return_object() {
-            auto holder = std::make_unique<co_fun::holder<R>>();
-            r_p         = holder.get();
+            auto holder = std::make_unique<co_fun::holder<R>>(this);
+            this->r_p   = holder.get();
             return Lazy(this, std::move(holder));
         }
-
-        auto return_value(R v) {
-            r_p->set_value(std::move(v));
-            return std::suspend_always();
-        }
-
-        void unhandled_exception() { throw; }
-
-        std::suspend_always initial_suspend() noexcept { return {}; }
-
-        std::suspend_never final_suspend() noexcept { return {}; }
-
-        auto handle() {
-            return std::coroutine_handle<promise_type>::from_promise(*this);
-        }
-
-        co_fun::holder<R>* r_p;
     };
 
   public:

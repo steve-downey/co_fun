@@ -40,9 +40,15 @@ std::string stringTest(const char* str) { return str; }
 
 TEST(Co_FunThunkTest, Breathing) {
     Thunk<int> thunk;
+    EXPECT_EQ(false, thunk.evaluated());
+    EXPECT_EQ(true, thunk.isEmpty());
+
     Thunk<int> thunk2(std::move(thunk));
     EXPECT_EQ(false, thunk2.evaluated());
+    EXPECT_EQ(true, thunk2.isEmpty());
     Thunk<int> thunk3(3);
+    EXPECT_EQ(true, thunk3.evaluated());
+    EXPECT_EQ(false, thunk3.isEmpty());
 
     int j{thunk3};
 
@@ -50,6 +56,8 @@ TEST(Co_FunThunkTest, Breathing) {
 
     Thunk<int> D2 = co_func();
     EXPECT_EQ(0, func_called);
+    EXPECT_EQ(false, D2.evaluated());
+    EXPECT_EQ(false, D2.isEmpty());
     int i = D2;
     EXPECT_EQ(i, 5);
     EXPECT_EQ(1, func_called);
@@ -66,29 +74,62 @@ TEST(Co_FunThunkTest, Assignment) {
 }
 
 TEST(Co_FunThunkTest, Move) {
-        std::string        str;
-        Thunk<std::string> d1(str);
-        Thunk<std::string> d2("test");
-        Thunk<std::string> d3 = thunk(stringTest, "this is a test");
-        //    Thunk<std::string> d4([]() { return stringTest("another test");
-        //    });
+    std::string        str;
+    Thunk<std::string> d1(str);
+    Thunk<std::string> d2("test");
+    Thunk<std::string> d3 = thunk(stringTest, "this is a test");
+    //    Thunk<std::string> d4([]() { return stringTest("another test");
+    //    });
 
-        EXPECT_TRUE(d1.evaluated());
-        EXPECT_TRUE(d2.evaluated());
-        EXPECT_FALSE(d3.evaluated());
-        // EXPECT_FALSE(d4.evaluated());
+    EXPECT_TRUE(d1.evaluated());
+    EXPECT_TRUE(d2.evaluated());
+    EXPECT_FALSE(d3.evaluated());
+    // EXPECT_FALSE(d4.evaluated());
 
-        EXPECT_EQ(std::string("this is a test"), evaluate(d3));
-        //    EXPECT_EQ(std::string("another test"), force(d4));
+    EXPECT_EQ(std::string("this is a test"), evaluate(d3));
+    //    EXPECT_EQ(std::string("another test"), force(d4));
+}
+
+TEST(Co_FunThunkTest, Sharing) {
+    Thunk<int> thunk = co_func();
+    Thunk      t2    = thunk;
+    Thunk      t3    = t2;
+
+    int k = thunk;
+    EXPECT_EQ(k, 5);
+    EXPECT_TRUE(t3.evaluated());
+}
+
+struct watch_destruction {
+    static int destructor_counter;
+
+    ~watch_destruction() { ++destructor_counter; }
+};
+
+int watch_destruction::destructor_counter = 0;
+
+Thunk<int> test_destruction(watch_destruction w) {
+    co_return w.destructor_counter;
+}
+
+TEST(Co_FunThunkTest, Leak) {
+    watch_destruction::destructor_counter = 0;
+    {
+        auto t = test_destruction(watch_destruction{});
+        EXPECT_EQ(watch_destruction::destructor_counter, 1);
+        int i = t;
+        EXPECT_EQ(i, 1);
+        EXPECT_EQ(watch_destruction::destructor_counter, 2);
     }
-
-    TEST(Co_FunThunkTest, Sharing) {
-        Thunk<int> thunk = co_func();
-        Thunk      t2    = thunk;
-        Thunk      t3    = t2;
-
-        int k = thunk;
-        EXPECT_EQ(k, 5);
-        EXPECT_TRUE(t3.evaluated());
+    EXPECT_EQ(watch_destruction::destructor_counter, 2);
+    watch_destruction::destructor_counter = 0;
+    {
+        auto t2 = thunk(test_destruction, watch_destruction{});
+        EXPECT_EQ(watch_destruction::destructor_counter, 1);
+        // No evaluation of thunk - potential leak
     }
+    EXPECT_EQ(watch_destruction::destructor_counter, 2);
+}
+
+
 } // namespace testing

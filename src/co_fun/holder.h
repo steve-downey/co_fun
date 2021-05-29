@@ -6,6 +6,7 @@
 #include <exception>
 #include <utility>
 #include <cassert>
+#include <coroutine>
 
 //@PURPOSE:
 //
@@ -29,6 +30,29 @@ struct value<void> {
 };
 
 template <typename T>
+struct holder;
+
+template <typename R>
+struct holder_promise_type {
+    void return_value(R v) {
+        r_p->set_value(std::move(v));
+        return;
+    }
+
+    void unhandled_exception() { throw; }
+
+    std::suspend_always initial_suspend() noexcept { return {}; }
+
+    std::suspend_never final_suspend() noexcept { return {}; }
+
+    auto handle() {
+        return std::coroutine_handle<holder_promise_type>::from_promise(*this);
+    }
+
+    co_fun::holder<R>* r_p;
+};
+
+template <typename T>
 struct holder {
     enum class result_status { empty, value, error };
 
@@ -40,24 +64,26 @@ struct holder {
 
         value<T>           wrapper;
         std::exception_ptr error;
-    } result;
+    } result_;
+
+    holder_promise_type<T>* promise_;
 
     template <typename... Args>
     void set_value(Args&&... args) {
-        new (std::addressof(result.wrapper))
+        new (std::addressof(result_.wrapper))
             value<T>{std::forward<Args>(args)...};
 
         status.store(result_status::value, std::memory_order_release);
     }
 
     void unhandled_exception() noexcept {
-        new (std::addressof(result.error))
+        new (std::addressof(result_.error))
             std::exception_ptr(std::current_exception());
 
         status.store(result_status::error, std::memory_order_release);
     }
 
-    bool is_empty() const noexcept {
+    bool unevaluated() const noexcept {
         return status.load(std::memory_order_relaxed) == result_status::empty;
     }
 
@@ -69,10 +95,10 @@ struct holder {
             break;
         }
         case result_status::value: {
-            return result.wrapper.get_value();
+            return result_.wrapper.get_value();
         }
         case result_status::error: {
-            std::rethrow_exception(std::exchange(result.error, {}));
+            std::rethrow_exception(std::exchange(result_.error, {}));
             break;
         }
         }
@@ -80,10 +106,15 @@ struct holder {
         std::terminate();
     }
 
-    holder() = default;
+    holder() : promise_(nullptr) {}
 
-    holder(T t) {
-        new (std::addressof(result.wrapper)) value<T>{t};
+    holder(holder_promise_type<T>* p) : promise_(p) {}
+
+    holder(holder&& source)
+        : promise_(std::exchange(source.promise_, nullptr)) {}
+
+    holder(T t) : promise_(nullptr) {
+        new (std::addressof(result_.wrapper)) value<T>{t};
 
         status.store(result_status::value, std::memory_order_release);
     }
@@ -91,23 +122,24 @@ struct holder {
     ~holder() {
         switch (status.load(std::memory_order_relaxed)) {
         case result_status::empty: {
+            if (promise_)
+                promise_->handle().destroy();
             break;
         }
         case result_status::value: {
-            result.wrapper.~value();
+            result_.wrapper.~value();
             break;
         }
         case result_status::error: {
-            if (result.error)
-                std::rethrow_exception(result.error);
-            result.error.~exception_ptr();
+            if (result_.error)
+                std::rethrow_exception(result_.error);
+            result_.error.~exception_ptr();
         } break;
         }
     }
+
+    holder_promise_type<T>* promise() { return promise_; }
 };
-// ============================================================================
-//              INLINE FUNCTION AND FUNCTION TEMPLATE DEFINITIONS
-// ============================================================================
 
 } // namespace co_fun
 

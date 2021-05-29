@@ -52,5 +52,3 @@ add_executable(
   )
 
 target_link_libraries(delay_benchmark benchmark delay)
-
-add_test(delay_benchmark delay_benchmark --benchmark_min_time=0.01)

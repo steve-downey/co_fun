@@ -10,95 +10,84 @@
 //
 //@DESCRIPTION:
 
+#include <cassert>
 #include <coroutine>
 #include <memory>
 #include <functional>
 
 #include <co_fun/holder.h>
+#include <utility>
 
 namespace co_fun {
 
 template <typename R>
 class Thunk {
-    struct promise_type {
+    struct promise_type : public holder_promise_type<R> {
         auto get_return_object() {
-            auto holder = std::make_shared<co_fun::holder<R>>();
-            r_p         = holder.get();
-            return Thunk(this, std::move(holder));
+            auto holder = std::make_shared<co_fun::holder<R>>(this);
+            this->r_p   = holder.get();
+            return Thunk(std::move(holder));
         }
-
-        void return_value(R v) {
-            r_p->set_value(std::move(v));
-            return;
-        }
-
-        void unhandled_exception() { throw; }
-
-        std::suspend_always initial_suspend() noexcept { return {}; }
-
-        std::suspend_never final_suspend() noexcept { return {}; }
-
-        auto handle() {
-            return std::coroutine_handle<promise_type>::from_promise(*this);
-        }
-
-        co_fun::holder<R>* r_p;
     };
 
   public:
     using promise_type = promise_type;
 
   public:
-    Thunk() : p_(nullptr), r_() {}
+    Thunk() : result_() {}
 
-    Thunk(Thunk const& source) : p_(source.p_), r_(source.r_) {}
+    Thunk(Thunk const& source) : result_(source.result_) {}
 
-    Thunk(Thunk&& source)
-        : p_(std::exchange(source.p_, nullptr)), r_(std::move(source.r_)) {}
+    Thunk(Thunk&& source) : result_(std::move(source.result_)) {}
 
-    Thunk(promise_type* p, std::shared_ptr<co_fun::holder<R>>&& r)
-        : p_(p), r_(r) {}
+    Thunk(std::shared_ptr<co_fun::holder<R>>&& r) : result_(r) {}
 
     explicit Thunk(R const& r)
-        : p_(nullptr), r_(std::make_shared<co_fun::holder<R>>(r)) {}
+        : result_(std::make_shared<co_fun::holder<R>>(r)) {}
 
     explicit Thunk(R&& r)
-        : p_(nullptr), r_(std::make_shared<co_fun::holder<R>>(std::move(r))) {}
+        : result_(std::make_shared<co_fun::holder<R>>(std::move(r))) {}
 
     ~Thunk() = default;
 
     Thunk& operator=(const Thunk& rhs) {
-        p_ = rhs.p_;
-        r_ = rhs.r_;
+        result_ = rhs.result_;
         return *this;
     }
 
     bool operator==(const Thunk& rhs) const {
-        if (r_ == rhs.r_)
+        if (result_ == rhs.result_)
             return true;
         return false;
     }
     bool operator!=(const Thunk& rhs) const {
-        if (r_ == rhs.r_)
+        if (result_ == rhs.result_)
             return false;
         return true;
     }
-    bool evaluated() const { return r_ && !r_->is_empty(); }
+    bool evaluated() const { return result_ && !result_->unevaluated(); }
+
     bool isEmpty() const {
-        return (p_ == nullptr) && (r_ == nullptr || r_->is_empty());
+        bool empty = false;
+        if (!result_) {
+            empty = true;
+        } else if (result_->unevaluated() && !result_->promise()) {
+            empty = true;
+        }
+        return empty;
     }
+
     R const& get() const {
         if (!evaluated()) {
-            p_->handle().resume();
+            result_->promise()->handle().resume();
         }
-        return r_->get_value();
+        return result_->get_value();
     }
 
     operator R const &() const { return get(); }
 
   private:
-    promise_type*                      p_;
-    std::shared_ptr<co_fun::holder<R>> r_;
+    std::shared_ptr<co_fun::holder<R>> result_;
 };
 
 // ============================================================================

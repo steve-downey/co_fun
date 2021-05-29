@@ -83,7 +83,7 @@ struct holder {
         status.store(result_status::error, std::memory_order_release);
     }
 
-    bool is_empty() const noexcept {
+    bool unevaluated() const noexcept {
         return status.load(std::memory_order_relaxed) == result_status::empty;
     }
 

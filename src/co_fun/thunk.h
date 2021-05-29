@@ -20,11 +20,11 @@
 
 namespace co_fun {
 
-template <typename R>
+template <typename Result>
 class Thunk {
-    struct promise_type : public holder_promise_type<R> {
+    struct promise_type : public holder_promise_type<Result> {
         auto get_return_object() {
-            auto holder = std::make_shared<co_fun::holder<R>>(this);
+            auto holder = std::make_shared<co_fun::holder<Result>>(this);
             this->r_p   = holder.get();
             return Thunk(std::move(holder));
         }
@@ -40,13 +40,13 @@ class Thunk {
 
     Thunk(Thunk&& source) : result_(std::move(source.result_)) {}
 
-    Thunk(std::shared_ptr<co_fun::holder<R>>&& r) : result_(r) {}
+    Thunk(std::shared_ptr<co_fun::holder<Result>>&& r) : result_(r) {}
 
-    explicit Thunk(R const& r)
-        : result_(std::make_shared<co_fun::holder<R>>(r)) {}
+    explicit Thunk(Result const& r)
+        : result_(std::make_shared<co_fun::holder<Result>>(r)) {}
 
-    explicit Thunk(R&& r)
-        : result_(std::make_shared<co_fun::holder<R>>(std::move(r))) {}
+    explicit Thunk(Result&& r)
+        : result_(std::make_shared<co_fun::holder<Result>>(std::move(r))) {}
 
     ~Thunk() = default;
 
@@ -77,17 +77,17 @@ class Thunk {
         return empty;
     }
 
-    R const& get() const {
+    Result const& get() const {
         if (!evaluated()) {
             result_->promise()->handle().resume();
         }
         return result_->get_value();
     }
 
-    operator R const &() const { return get(); }
+    operator Result const &() const { return get(); }
 
   private:
-    std::shared_ptr<co_fun::holder<R>> result_;
+    std::shared_ptr<co_fun::holder<Result>> result_;
 };
 
 // ============================================================================

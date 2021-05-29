@@ -19,11 +19,11 @@
 
 namespace co_fun {
 
-template <typename R>
+template <typename Result>
 class Lazy {
-    struct promise_type : public holder_promise_type<R> {
+    struct promise_type : public holder_promise_type<Result> {
         auto get_return_object() {
-            auto holder = std::make_unique<co_fun::holder<R>>(this);
+            auto holder = std::make_unique<co_fun::holder<Result>>(this);
             this->r_p   = holder.get();
             return Lazy(std::move(holder));
         }
@@ -33,32 +33,32 @@ class Lazy {
     using promise_type = promise_type;
 
   public:
-    Lazy() : r_() {}
+    Lazy() : result_() {}
 
     Lazy(Lazy&& source)
-        : r_(std::move(source.r_)) {}
+        : result_(std::move(source.result_)) {}
 
-    explicit Lazy(std::unique_ptr<co_fun::holder<R>>&& r)
-        : r_(std::move(r)) {}
+    explicit Lazy(std::unique_ptr<co_fun::holder<Result>>&& result)
+        : result_(std::move(result)) {}
 
-    explicit Lazy(R r)
-        : r_(std::make_unique<co_fun::holder<R>>(r)) {}
+    explicit Lazy(Result result)
+        : result_(std::make_unique<co_fun::holder<Result>>(result)) {}
 
     ~Lazy() = default;
 
-    bool evaluated() const { return r_ && !r_->unevaluated(); }
+    bool evaluated() const { return result_ && !result_->unevaluated(); }
 
-    R&& get() const {
+    Result&& get() const {
         if (!evaluated()) {
-            r_->promise()->handle().resume();
+            result_->promise()->handle().resume();
         }
-        return r_->get_value();
+        return result_->get_value();
     }
 
-    operator R&&() const { return get(); }
+    operator Result&&() const { return get(); }
 
   private:
-    std::unique_ptr<co_fun::holder<R>> r_;
+    std::unique_ptr<co_fun::holder<Result>> result_;
 };
 
 template <typename Value>

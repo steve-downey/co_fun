@@ -40,9 +40,15 @@ std::string stringTest(const char* str) { return str; }
 
 TEST(Co_FunThunkTest, Breathing) {
     Thunk<int> thunk;
+    EXPECT_EQ(false, thunk.evaluated());
+    EXPECT_EQ(true, thunk.isEmpty());
+
     Thunk<int> thunk2(std::move(thunk));
     EXPECT_EQ(false, thunk2.evaluated());
+    EXPECT_EQ(true, thunk2.isEmpty());
     Thunk<int> thunk3(3);
+    EXPECT_EQ(true, thunk3.evaluated());
+    EXPECT_EQ(false, thunk3.isEmpty());
 
     int j{thunk3};
 
@@ -50,6 +56,8 @@ TEST(Co_FunThunkTest, Breathing) {
 
     Thunk<int> D2 = co_func();
     EXPECT_EQ(0, func_called);
+    EXPECT_EQ(false, D2.evaluated());
+    EXPECT_EQ(false, D2.isEmpty());
     int i = D2;
     EXPECT_EQ(i, 5);
     EXPECT_EQ(1, func_called);

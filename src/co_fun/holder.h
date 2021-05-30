@@ -19,13 +19,13 @@
 namespace co_fun {
 
 template <typename T>
-struct value {
+struct Value {
     T   value;
     T&& get_value() { return static_cast<T&&>(value); }
 };
 
 template <>
-struct value<void> {
+struct Value<void> {
     void get_value() {}
 };
 
@@ -60,7 +60,7 @@ struct Holder {
         result_holder(){};
         ~result_holder(){};
 
-        value<R>           wrapper;
+        Value<R>           wrapper;
         std::exception_ptr error;
     } result_;
 
@@ -69,7 +69,7 @@ struct Holder {
     template <typename... Args>
     void set_value(Args&&... args) {
         new (std::addressof(result_.wrapper))
-            value<R>{std::forward<Args>(args)...};
+            Value<R>{std::forward<Args>(args)...};
 
         status.store(result_status::value, std::memory_order_release);
     }
@@ -106,7 +106,7 @@ struct Holder {
 
     void resume() { return promise_->handle().resume(); }
 
-    Promise* promise() { return promise_; }
+    bool isNil() { return unevaluated() && !promise_; }
 
     Holder() : promise_(nullptr) {}
 
@@ -116,7 +116,7 @@ struct Holder {
         : promise_(std::exchange(source.promise_, nullptr)) {}
 
     Holder(R t) : promise_(nullptr) {
-        new (std::addressof(result_.wrapper)) value<R>{t};
+        new (std::addressof(result_.wrapper)) Value<R>{t};
 
         status.store(result_status::value, std::memory_order_release);
     }
@@ -129,7 +129,7 @@ struct Holder {
             break;
         }
         case result_status::value: {
-            result_.wrapper.~value();
+            result_.wrapper.~Value();
             break;
         }
         case result_status::error: {
@@ -139,7 +139,6 @@ struct Holder {
         } break;
         }
     }
-
 };
 
 } // namespace co_fun

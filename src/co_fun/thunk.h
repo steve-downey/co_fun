@@ -72,7 +72,7 @@ class Thunk {
         bool empty = false;
         if (!result_) {
             empty = true;
-        } else if (result_->unevaluated() && !result_->promise()) {
+        } else if (result_->isNil()) {
             empty = true;
         }
         return empty;

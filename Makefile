@@ -55,3 +55,5 @@ clean: $(BUILD_PATH)/CMakeCache.txt
 
 realclean:
 	rm -rf $(BUILD_PATH)
+
+.PHONY: realclean clean cmake test ctest install build default

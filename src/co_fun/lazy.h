@@ -21,7 +21,7 @@ namespace co_fun {
 
 template <typename Result>
 class Lazy {
-    struct Promise : public HolderPromise<Result> {
+    struct Promise : public Holder<Result>::Promise {
         auto get_return_object() {
             auto holder = std::make_unique<co_fun::Holder<Result>>(this);
             return Lazy(std::move(holder));

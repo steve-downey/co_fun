@@ -29,33 +29,29 @@ struct value<void> {
     void get_value() {}
 };
 
-template <typename T>
-struct Holder;
-
 template <typename R>
-struct HolderPromise {
-    void return_value(R v) {
-        r_p->set_value(std::move(v));
-        return;
-    }
-
-    void unhandled_exception() { throw; }
-
-    std::suspend_always initial_suspend() noexcept { return {}; }
-
-    std::suspend_never final_suspend() noexcept { return {}; }
-
-    auto handle() {
-        return std::coroutine_handle<HolderPromise>::from_promise(*this);
-    }
-
-    void setHolder(Holder<R>* holder) { r_p = holder; }
-
-    Holder<R>* r_p;
-};
-
-template <typename T>
 struct Holder {
+    struct Promise {
+        void return_value(R v) {
+            holder_->set_value(std::move(v));
+            return;
+        }
+
+        void unhandled_exception() { throw; }
+
+        std::suspend_always initial_suspend() noexcept { return {}; }
+
+        std::suspend_never final_suspend() noexcept { return {}; }
+
+        auto handle() {
+            return std::coroutine_handle<Promise>::from_promise(*this);
+        }
+
+        void setHolder(Holder<R>* holder) { holder_ = holder; }
+
+        Holder<R>* holder_;
+    };
+
     enum class result_status { empty, value, error };
 
     std::atomic<result_status> status{result_status::empty};
@@ -64,16 +60,16 @@ struct Holder {
         result_holder(){};
         ~result_holder(){};
 
-        value<T>           wrapper;
+        value<R>           wrapper;
         std::exception_ptr error;
     } result_;
 
-    HolderPromise<T>* promise_;
+    Promise* promise_;
 
     template <typename... Args>
     void set_value(Args&&... args) {
         new (std::addressof(result_.wrapper))
-            value<T>{std::forward<Args>(args)...};
+            value<R>{std::forward<Args>(args)...};
 
         status.store(result_status::value, std::memory_order_release);
     }
@@ -89,7 +85,7 @@ struct Holder {
         return status.load(std::memory_order_relaxed) == result_status::empty;
     }
 
-    T&& get_value() {
+    R&& get_value() {
         switch (status.load(std::memory_order_acquire)) {
         case result_status::empty: {
             assert(false);
@@ -108,17 +104,19 @@ struct Holder {
         std::terminate();
     }
 
-    void resume() { return promise()->handle().resume(); }
+    void resume() { return promise_->handle().resume(); }
+
+    Promise* promise() { return promise_; }
 
     Holder() : promise_(nullptr) {}
 
-    Holder(HolderPromise<T>* p) : promise_(p) { p->setHolder(this); }
+    Holder(Promise* p) : promise_(p) { p->setHolder(this); }
 
     Holder(Holder&& source)
         : promise_(std::exchange(source.promise_, nullptr)) {}
 
-    Holder(T t) : promise_(nullptr) {
-        new (std::addressof(result_.wrapper)) value<T>{t};
+    Holder(R t) : promise_(nullptr) {
+        new (std::addressof(result_.wrapper)) value<R>{t};
 
         status.store(result_status::value, std::memory_order_release);
     }
@@ -142,7 +140,6 @@ struct Holder {
         }
     }
 
-    HolderPromise<T>* promise() { return promise_; }
 };
 
 } // namespace co_fun

@@ -22,7 +22,7 @@ namespace co_fun {
 
 template <typename Result>
 class Thunk {
-    struct Promise : public HolderPromise<Result> {
+    struct Promise : public Holder<Result>::Promise {
         auto get_return_object() {
             auto holder = std::make_shared<co_fun::Holder<Result>>(this);
             return Thunk(std::move(holder));

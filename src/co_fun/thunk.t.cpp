@@ -35,6 +35,11 @@ int func3(int i, int j) {
     func3_called++;
     return i + j;
 }
+
+Thunk<std::string> co_func_str() {
+    co_return std::string("a string");
+}
+
 std::string stringTest(const char* str) { return str; }
 } // namespace
 
@@ -65,6 +70,15 @@ TEST(Co_FunThunkTest, Breathing) {
     int i2 = D2;
     EXPECT_EQ(i2, 5);
     EXPECT_EQ(1, func_called);
+}
+
+TEST(Co_FunThunkTest, Rvalue) {
+    Thunk<std::string> s1 = co_func_str();
+    EXPECT_EQ(false, s1.evaluated());
+    EXPECT_EQ(false, s1.isEmpty());
+    EXPECT_EQ(std::string("a string"), evaluate(s1));
+
+    EXPECT_EQ(std::string("a string"), evaluate(co_func_str()));
 }
 
 TEST(Co_FunThunkTest, Assignment) {

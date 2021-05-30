@@ -30,10 +30,10 @@ struct value<void> {
 };
 
 template <typename T>
-struct holder;
+struct Holder;
 
 template <typename R>
-struct holder_promise_type {
+struct HolderPromise {
     void return_value(R v) {
         r_p->set_value(std::move(v));
         return;
@@ -46,14 +46,16 @@ struct holder_promise_type {
     std::suspend_never final_suspend() noexcept { return {}; }
 
     auto handle() {
-        return std::coroutine_handle<holder_promise_type>::from_promise(*this);
+        return std::coroutine_handle<HolderPromise>::from_promise(*this);
     }
 
-    co_fun::holder<R>* r_p;
+    void setHolder(Holder<R>* holder) { r_p = holder; }
+
+    Holder<R>* r_p;
 };
 
 template <typename T>
-struct holder {
+struct Holder {
     enum class result_status { empty, value, error };
 
     std::atomic<result_status> status{result_status::empty};
@@ -66,7 +68,7 @@ struct holder {
         std::exception_ptr error;
     } result_;
 
-    holder_promise_type<T>* promise_;
+    HolderPromise<T>* promise_;
 
     template <typename... Args>
     void set_value(Args&&... args) {
@@ -106,20 +108,22 @@ struct holder {
         std::terminate();
     }
 
-    holder() : promise_(nullptr) {}
+    void resume() { return promise()->handle().resume(); }
 
-    holder(holder_promise_type<T>* p) : promise_(p) {}
+    Holder() : promise_(nullptr) {}
 
-    holder(holder&& source)
+    Holder(HolderPromise<T>* p) : promise_(p) { p->setHolder(this); }
+
+    Holder(Holder&& source)
         : promise_(std::exchange(source.promise_, nullptr)) {}
 
-    holder(T t) : promise_(nullptr) {
+    Holder(T t) : promise_(nullptr) {
         new (std::addressof(result_.wrapper)) value<T>{t};
 
         status.store(result_status::value, std::memory_order_release);
     }
 
-    ~holder() {
+    ~Holder() {
         switch (status.load(std::memory_order_relaxed)) {
         case result_status::empty: {
             if (promise_)
@@ -138,7 +142,7 @@ struct holder {
         }
     }
 
-    holder_promise_type<T>* promise() { return promise_; }
+    HolderPromise<T>* promise() { return promise_; }
 };
 
 } // namespace co_fun

@@ -16,7 +16,7 @@ TEST(Co_FunHolderTest, ValueBreathing) {
 }
 
 TEST(Co_FunHolderTest, HolderBreathing) {
-    holder<int> hi;
+    Holder<int> hi;
     hi.set_value(42);
     int i = hi.get_value();
     EXPECT_EQ(42, i);

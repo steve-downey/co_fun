@@ -21,16 +21,15 @@ namespace co_fun {
 
 template <typename Result>
 class Lazy {
-    struct promise_type : public holder_promise_type<Result> {
+    struct Promise : public HolderPromise<Result> {
         auto get_return_object() {
-            auto holder = std::make_unique<co_fun::holder<Result>>(this);
-            this->r_p   = holder.get();
+            auto holder = std::make_unique<co_fun::Holder<Result>>(this);
             return Lazy(std::move(holder));
         }
     };
 
   public:
-    using promise_type = promise_type;
+    using promise_type = Promise;
 
   public:
     Lazy() : result_() {}
@@ -38,11 +37,11 @@ class Lazy {
     Lazy(Lazy&& source)
         : result_(std::move(source.result_)) {}
 
-    explicit Lazy(std::unique_ptr<co_fun::holder<Result>>&& result)
+    explicit Lazy(std::unique_ptr<co_fun::Holder<Result>>&& result)
         : result_(std::move(result)) {}
 
     explicit Lazy(Result result)
-        : result_(std::make_unique<co_fun::holder<Result>>(result)) {}
+        : result_(std::make_unique<co_fun::Holder<Result>>(result)) {}
 
     ~Lazy() = default;
 
@@ -50,7 +49,7 @@ class Lazy {
 
     Result&& get() const {
         if (!evaluated()) {
-            result_->promise()->handle().resume();
+            result_->resume();
         }
         return result_->get_value();
     }
@@ -58,7 +57,7 @@ class Lazy {
     operator Result&&() const { return get(); }
 
   private:
-    std::unique_ptr<co_fun::holder<Result>> result_;
+    std::unique_ptr<co_fun::Holder<Result>> result_;
 };
 
 template <typename Value>
@@ -67,7 +66,7 @@ Value const& evaluate(Lazy<Value> const& lazy) {
 }
 
 template <typename Value>
-Value const& evaluate(Lazy<Value>&& lazy) {
+Value&& evaluate(Lazy<Value>&& lazy) {
     return std::move(lazy);
 }
 

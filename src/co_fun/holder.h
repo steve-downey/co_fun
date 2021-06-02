@@ -19,41 +19,39 @@
 namespace co_fun {
 
 template <typename T>
-struct value {
+struct Value {
     T   value;
     T&& get_value() { return static_cast<T&&>(value); }
 };
 
 template <>
-struct value<void> {
+struct Value<void> {
     void get_value() {}
 };
 
-template <typename T>
-struct holder;
-
 template <typename R>
-struct holder_promise_type {
-    void return_value(R v) {
-        r_p->set_value(std::move(v));
-        return;
-    }
+struct Holder {
+    struct Promise {
+        void return_value(R v) {
+            holder_->set_value(std::move(v));
+            return;
+        }
 
-    void unhandled_exception() { throw; }
+        void unhandled_exception() { throw; }
 
-    std::suspend_always initial_suspend() noexcept { return {}; }
+        std::suspend_always initial_suspend() noexcept { return {}; }
 
-    std::suspend_never final_suspend() noexcept { return {}; }
+        std::suspend_never final_suspend() noexcept { return {}; }
 
-    auto handle() {
-        return std::coroutine_handle<holder_promise_type>::from_promise(*this);
-    }
+        auto handle() {
+            return std::coroutine_handle<Promise>::from_promise(*this);
+        }
 
-    co_fun::holder<R>* r_p;
-};
+        void setHolder(Holder<R>* holder) { holder_ = holder; }
 
-template <typename T>
-struct holder {
+        Holder<R>* holder_;
+    };
+
     enum class result_status { empty, value, error };
 
     std::atomic<result_status> status{result_status::empty};
@@ -62,16 +60,16 @@ struct holder {
         result_holder(){};
         ~result_holder(){};
 
-        value<T>           wrapper;
+        Value<R>           wrapper;
         std::exception_ptr error;
     } result_;
 
-    holder_promise_type<T>* promise_;
+    Promise* promise_;
 
     template <typename... Args>
     void set_value(Args&&... args) {
         new (std::addressof(result_.wrapper))
-            value<T>{std::forward<Args>(args)...};
+            Value<R>{std::forward<Args>(args)...};
 
         status.store(result_status::value, std::memory_order_release);
     }
@@ -87,7 +85,7 @@ struct holder {
         return status.load(std::memory_order_relaxed) == result_status::empty;
     }
 
-    T&& get_value() {
+    R&& get_value() {
         switch (status.load(std::memory_order_acquire)) {
         case result_status::empty: {
             assert(false);
@@ -106,20 +104,24 @@ struct holder {
         std::terminate();
     }
 
-    holder() : promise_(nullptr) {}
+    void resume() { return promise_->handle().resume(); }
 
-    holder(holder_promise_type<T>* p) : promise_(p) {}
+    bool isNil() { return unevaluated() && !promise_; }
 
-    holder(holder&& source)
+    Holder() : promise_(nullptr) {}
+
+    Holder(Promise* p) : promise_(p) { p->setHolder(this); }
+
+    Holder(Holder&& source)
         : promise_(std::exchange(source.promise_, nullptr)) {}
 
-    holder(T t) : promise_(nullptr) {
-        new (std::addressof(result_.wrapper)) value<T>{t};
+    Holder(R t) : promise_(nullptr) {
+        new (std::addressof(result_.wrapper)) Value<R>{t};
 
         status.store(result_status::value, std::memory_order_release);
     }
 
-    ~holder() {
+    ~Holder() {
         switch (status.load(std::memory_order_relaxed)) {
         case result_status::empty: {
             if (promise_)
@@ -127,7 +129,7 @@ struct holder {
             break;
         }
         case result_status::value: {
-            result_.wrapper.~value();
+            result_.wrapper.~Value();
             break;
         }
         case result_status::error: {
@@ -137,8 +139,6 @@ struct holder {
         } break;
         }
     }
-
-    holder_promise_type<T>* promise() { return promise_; }
 };
 
 } // namespace co_fun

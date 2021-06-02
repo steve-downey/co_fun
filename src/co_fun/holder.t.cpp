@@ -7,20 +7,20 @@ using namespace co_fun;
 TEST(Co_FunHolderTest, TestGTest) { ASSERT_EQ(1, 1); }
 
 TEST(Co_FunHolderTest, ValueBreathing) {
-    value<int> vi;
+    Value<int> vi;
     int        i = vi.get_value();
     (void)(i); // unused warning
 
-    value<void> vv;
+    Value<void> vv;
     vv.get_value();
 }
 
 TEST(Co_FunHolderTest, HolderBreathing) {
-    holder<int> hi;
+    Holder<int> hi;
     hi.set_value(42);
     int i = hi.get_value();
     EXPECT_EQ(42, i);
 
-    value<void> vv;
+    Value<void> vv;
     vv.get_value();
 }

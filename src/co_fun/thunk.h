@@ -20,18 +20,17 @@
 
 namespace co_fun {
 
-template <typename R>
+template <typename Result>
 class Thunk {
-    struct promise_type : public holder_promise_type<R> {
+    struct Promise : public Holder<Result>::Promise {
         auto get_return_object() {
-            auto holder = std::make_shared<co_fun::holder<R>>(this);
-            this->r_p   = holder.get();
+            auto holder = std::make_shared<co_fun::Holder<Result>>(this);
             return Thunk(std::move(holder));
         }
     };
 
   public:
-    using promise_type = promise_type;
+    using promise_type = Promise;
 
   public:
     Thunk() : result_() {}
@@ -40,13 +39,13 @@ class Thunk {
 
     Thunk(Thunk&& source) : result_(std::move(source.result_)) {}
 
-    Thunk(std::shared_ptr<co_fun::holder<R>>&& r) : result_(r) {}
+    Thunk(std::shared_ptr<co_fun::Holder<Result>>&& r) : result_(r) {}
 
-    explicit Thunk(R const& r)
-        : result_(std::make_shared<co_fun::holder<R>>(r)) {}
+    explicit Thunk(Result const& r)
+        : result_(std::make_shared<co_fun::Holder<Result>>(r)) {}
 
-    explicit Thunk(R&& r)
-        : result_(std::make_shared<co_fun::holder<R>>(std::move(r))) {}
+    explicit Thunk(Result&& r)
+        : result_(std::make_shared<co_fun::Holder<Result>>(std::move(r))) {}
 
     ~Thunk() = default;
 
@@ -60,34 +59,36 @@ class Thunk {
             return true;
         return false;
     }
+
     bool operator!=(const Thunk& rhs) const {
         if (result_ == rhs.result_)
             return false;
         return true;
     }
+
     bool evaluated() const { return result_ && !result_->unevaluated(); }
 
     bool isEmpty() const {
         bool empty = false;
         if (!result_) {
             empty = true;
-        } else if (result_->unevaluated() && !result_->promise()) {
+        } else if (result_->isNil()) {
             empty = true;
         }
         return empty;
     }
 
-    R const& get() const {
+    Result const& get() const& {
         if (!evaluated()) {
-            result_->promise()->handle().resume();
+            result_->resume();
         }
         return result_->get_value();
     }
 
-    operator R const &() const { return get(); }
+    operator Result const &() const { return get(); }
 
   private:
-    std::shared_ptr<co_fun::holder<R>> result_;
+    std::shared_ptr<co_fun::Holder<Result>> result_;
 };
 
 // ============================================================================
@@ -100,7 +101,7 @@ Value const& evaluate(Thunk<Value> const& thunk) {
 }
 
 template <typename Value>
-Value const& evaluate(Thunk<Value>&& thunk) {
+Value evaluate(Thunk<Value>&& thunk) {
     return std::move(thunk);
 }
 

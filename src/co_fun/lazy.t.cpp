@@ -61,7 +61,6 @@ TEST(Co_FunLazyTest, Breathing) {
     EXPECT_EQ(1, func_called);
 }
 
-
 TEST(Co_FunLazyTest, MoveTest) {
     std::string       str;
     Lazy<std::string> d1(str);
@@ -84,12 +83,15 @@ TEST(Co_FunLazyTest, MoveTest) {
 }
 
 Lazy<int> test(int k) {
-    return lazy([k]() { func_called++; return k; });
+    return lazy([k]() {
+        func_called++;
+        return k;
+    });
 }
 
 TEST(Co_FunLazyTest, IndirectTest) {
     func_called = 0;
-    auto l = lazy([](){return func();});
+    auto l      = lazy([]() { return func(); });
     EXPECT_FALSE(l.evaluated());
     EXPECT_EQ(0, func_called);
     int i = l;
@@ -103,4 +105,36 @@ TEST(Co_FunLazyTest, IndirectTest) {
     EXPECT_EQ(i2, 9);
     EXPECT_EQ(2, func_called);
 }
+
+TEST(Co_FunLazyTest, LambdaTest) {
+    auto l = lazy([]() { return 5; });
+    int  i = l;
+    EXPECT_EQ(i, 5);
+
+    auto l2 = lazy([]() { return []() { return 5; }; });
+    int  i2 = evaluate(l2)();
+    EXPECT_EQ(i2, 5);
+
+    auto l3 = lazy([](auto c) { return c; }, []() { return 5; });
+    int  i3 = evaluate(l3)();
+    EXPECT_EQ(i3, 5);
+
+    auto l4 = lazy([](auto c) { return c; }, [](int j) { return j + 5; });
+    int  i4 = evaluate(l4)(1);
+    EXPECT_EQ(i4, 6);
+
+    auto lambda1 = [](int k) { return [k](int j) { return k + j; }; };
+    auto l5      = lazy(lambda1, 1);
+    int  i5      = evaluate(l5)(6);
+    EXPECT_EQ(i5, 7);
+}
+int  identity(int i) { return i; }
+auto func_return() { return identity; }
+
+TEST(Co_FunLazyTest, FunctionsTest) {
+    auto l = lazy(func_return);
+    int  i = l(10);
+    EXPECT_EQ(i, 10);
+}
+
 } // namespace testing

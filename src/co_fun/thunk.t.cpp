@@ -36,9 +36,7 @@ int func3(int i, int j) {
     return i + j;
 }
 
-Thunk<std::string> co_func_str() {
-    co_return std::string("a string");
-}
+Thunk<std::string> co_func_str() { co_return std::string("a string"); }
 
 std::string stringTest(const char* str) { return str; }
 } // namespace
@@ -144,6 +142,5 @@ TEST(Co_FunThunkTest, Leak) {
     }
     EXPECT_EQ(watch_destruction::destructor_counter, 2);
 }
-
 
 } // namespace testing

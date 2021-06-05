@@ -137,4 +137,15 @@ TEST(Co_FunLazyTest, FunctionsTest) {
     EXPECT_EQ(i, 10);
 }
 
+TEST(Co_FunLazyTest, TransformTest) {
+    auto l = lazy([]() { return 5; });
+    auto i = transform(std::move(l), [](auto j) { return j * 2; });
+    EXPECT_TRUE(l.isEmpty());
+    EXPECT_EQ(i, 10);
+    EXPECT_TRUE(l.isEmpty());
+
+    auto i2 = transform(Lazy<int>{6}, [](auto j) { return j * 2; });
+    EXPECT_EQ(i2, 12);
+}
+
 } // namespace testing

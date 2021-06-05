@@ -34,8 +34,7 @@ class Lazy {
   public:
     Lazy() : result_() {}
 
-    Lazy(Lazy&& source)
-        : result_(std::move(source.result_)) {}
+    Lazy(Lazy&& source) : result_(std::move(source.result_)) {}
 
     explicit Lazy(std::unique_ptr<co_fun::Holder<Result>>&& result)
         : result_(std::move(result)) {}
@@ -46,6 +45,16 @@ class Lazy {
     ~Lazy() = default;
 
     bool evaluated() const { return result_ && !result_->unevaluated(); }
+
+    bool isEmpty() const {
+        bool empty = false;
+        if (!result_) {
+            empty = true;
+        } else if (result_->isNil()) {
+            empty = true;
+        }
+        return empty;
+    }
 
     Result&& get() const {
         if (!evaluated()) {
@@ -73,6 +82,11 @@ Value&& evaluate(Lazy<Value>&& lazy) {
 template <typename F, typename... Args>
 auto lazy(F f, Args... args) -> Lazy<std::invoke_result_t<F, Args...>> {
     co_return std::invoke(f, args...);
+}
+
+template <typename Result, typename F>
+auto transform(Lazy<Result> l, F f) -> Lazy<std::invoke_result_t<F, Result>> {
+    co_return f(evaluate(l));
 }
 
 // ============================================================================

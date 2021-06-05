@@ -143,4 +143,21 @@ TEST(Co_FunThunkTest, Leak) {
     EXPECT_EQ(watch_destruction::destructor_counter, 2);
 }
 
+TEST(Co_FunThunkTest, TransformTest) {
+    auto t = thunk([]() { return 5; });
+    auto i = transform(std::move(t), [](auto j) { return j * 2; });
+    EXPECT_TRUE(t.isEmpty());
+    EXPECT_EQ(i, 10);
+    EXPECT_TRUE(t.isEmpty());
+
+    auto i2 = transform(Thunk<int>{6}, [](auto j) { return j * 2; });
+    EXPECT_EQ(i2, 12);
+
+    auto t3 = thunk([]() { return 5; });
+    auto i3 = transform(t3, [](auto j) { return j * 2; });
+    EXPECT_FALSE(t3.evaluated());
+    EXPECT_EQ(i3, 10);
+    EXPECT_TRUE(t3.evaluated());
+}
+
 } // namespace testing

@@ -110,6 +110,12 @@ auto thunk(F f, Args... args) -> Thunk<std::invoke_result_t<F, Args...>> {
     co_return std::invoke(f, args...);
 }
 
+template <typename Result, typename F>
+auto transform(Thunk<Result> l, F f)
+    -> Thunk<std::invoke_result_t<F, Result>> {
+    co_return f(evaluate(l));
+}
+
 } // namespace co_fun
 
 #endif

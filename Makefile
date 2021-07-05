@@ -34,7 +34,7 @@ $(BUILD_PATH)/CMakeCache.txt: | $(BUILD_PATH)
 	ln -s $(BUILD_PATH)/compile_commands.json
 
 build: $(BUILD_PATH)/CMakeCache.txt
-	cd $(BUILD_PATH) && ninja -k 0
+	cd $(BUILD_PATH) && ninja -k 0 -v
 
 install: $(BUILD_PATH)/CMakeCache.txt
 	cd $(BUILD_PATH) && ninja install

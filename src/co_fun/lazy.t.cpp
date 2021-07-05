@@ -148,4 +148,36 @@ TEST(Co_FunLazyTest, TransformTest) {
     EXPECT_EQ(i2, 12);
 }
 
+TEST(Co_FunLazyTest, JoinTest) {
+    Lazy<Lazy<int>> l = lazy([]() { return Lazy{5}; });
+    Lazy<int>       j = join(std::move(l));
+    EXPECT_EQ(j, 5);
+
+    Lazy<int>       l2 = lazy([](auto i, auto j) { return i + j; }, 3, 5);
+    Lazy<Lazy<int>> l3 = [](auto l) -> Lazy<Lazy<int>> {
+        co_return l;
+    }(std::move(l2));
+    Lazy<int> l4 = join(std::move(l3));
+    EXPECT_EQ(false, l4.evaluated());
+    EXPECT_EQ(8, l4);
+}
+
+TEST(Co_FunLazyTest, BindTest) {
+    Lazy<int>    l = lazy([]() { return 5; });
+    Lazy<double> b =
+        bind(std::move(l), [](int i) -> Lazy<double> { co_return 1.0 * i; });
+    EXPECT_EQ(false, b.evaluated());
+    EXPECT_EQ(5.0, b);
+    EXPECT_EQ(true, b.evaluated());
+}
+
+TEST(Co_FunLazyTest, Bind2Test) {
+    Lazy<int>    l = lazy([]() { return 5; });
+    Lazy<double> b =
+        bind2(std::move(l), [](int i) -> Lazy<double> { co_return 1.0 * i; });
+    EXPECT_EQ(false, b.evaluated());
+    EXPECT_EQ(5.0, b);
+    EXPECT_EQ(true, b.evaluated());
+}
+
 } // namespace testing

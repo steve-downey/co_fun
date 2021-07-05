@@ -89,6 +89,21 @@ auto transform(Lazy<Result> l, F f) -> Lazy<std::invoke_result_t<F, Result>> {
     co_return f(evaluate(l));
 }
 
+template <typename Value>
+auto join(Lazy<Lazy<Value>>&& l) -> Lazy<Value> {
+    return evaluate(std::move(l));
+}
+
+template <typename Value, typename Func>
+auto bind(Lazy<Value>&& l, Func f) -> decltype(f(evaluate(l))) {
+    return join(transform(std::move(l), f));
+}
+
+template <typename Value, typename Func>
+auto bind2(Lazy<Value>&& l, Func f) -> decltype(f(evaluate(l))) {
+    co_return f(evaluate(l));
+}
+
 // ============================================================================
 //              INLINE FUNCTION AND FUNCTION TEMPLATE DEFINITIONS
 // ============================================================================

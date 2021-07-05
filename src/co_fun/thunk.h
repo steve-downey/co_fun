@@ -116,6 +116,22 @@ auto transform(Thunk<Result> l, F f)
     co_return f(evaluate(l));
 }
 
+template <typename Value>
+auto join(Thunk<Thunk<Value>> l) -> Thunk<Value> {
+    return evaluate(l);
+}
+
+template <typename Value, typename Func>
+auto bind(Thunk<Value> l, Func f) -> decltype(f(evaluate(l))) {
+    return join(transform(l, f));
+}
+
+template <typename Value, typename Func>
+auto bind2(Thunk<Value> l, Func f) -> decltype(f(evaluate(l))) {
+    co_return f(evaluate(l));
+}
+
+
 } // namespace co_fun
 
 #endif

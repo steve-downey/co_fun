@@ -160,4 +160,53 @@ TEST(Co_FunThunkTest, TransformTest) {
     EXPECT_TRUE(t3.evaluated());
 }
 
+TEST(Co_FunThunkTest, JoinTest) {
+    Thunk<Thunk<int>> l = thunk([]() { return Thunk{5}; });
+    Thunk<int>       j = join(l);
+    EXPECT_EQ(j, 5);
+
+    Thunk<int>       l2 = thunk([](auto i, auto j) { return i + j; }, 3, 5);
+    Thunk<Thunk<int>> l3 = [](auto l) -> Thunk<Thunk<int>> {
+        co_return l;
+    }(std::move(l2));
+    Thunk<int> l4 = join(l3);
+    EXPECT_EQ(false, l4.evaluated());
+    EXPECT_EQ(8, l4);
+}
+
+TEST(Co_FunThunkTest, BindTest) {
+    Thunk<int>    l = thunk([]() { return 5; });
+    Thunk<double> b =
+        bind(l, [](int i) -> Thunk<double> { co_return 1.0 * i; });
+    EXPECT_EQ(false, b.evaluated());
+    EXPECT_EQ(5.0, b);
+    EXPECT_EQ(true, b.evaluated());
+}
+
+TEST(Co_FunThunkTest, BindTestRvalue) {
+    Thunk<double> b = bind(thunk([]() { return 5; }),
+                           [](int i) -> Thunk<double> { co_return 1.0 * i; });
+    EXPECT_EQ(false, b.evaluated());
+    EXPECT_EQ(5.0, b);
+    EXPECT_EQ(true, b.evaluated());
+}
+
+TEST(Co_FunThunkTest, Bind2Test) {
+    Thunk<int>    l = thunk([]() { return 5; });
+    Thunk<double> b =
+        bind2(l, [](int i) -> Thunk<double> { co_return 1.0 * i; });
+    EXPECT_EQ(false, b.evaluated());
+    EXPECT_EQ(5.0, b);
+    EXPECT_EQ(true, b.evaluated());
+}
+
+TEST(Co_FunThunkTest, Bind2TestRvalue) {
+    Thunk<double> b = bind2(thunk([]() { return 5; }),
+                            [](int i) -> Thunk<double> { co_return 1.0 * i; });
+    EXPECT_EQ(false, b.evaluated());
+    EXPECT_EQ(5.0, b);
+    EXPECT_EQ(true, b.evaluated());
+}
+
+
 } // namespace testing

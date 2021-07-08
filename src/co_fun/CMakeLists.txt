@@ -4,6 +4,7 @@ target_sources(
   co_fun
   PRIVATE
   co_fun.cpp
+  continuation.cpp
   lazy.cpp
   thunk.cpp
   holder.cpp
@@ -38,6 +39,7 @@ target_sources(
   co_fun_test
   PRIVATE
   co_fun.t.cpp
+  continuation.t.cpp
   lazy.t.cpp
   thunk.t.cpp
   holder.t.cpp

@@ -15,8 +15,9 @@ endif
 
 define run_cmake =
 	cmake \
-	-G "Ninja" \
-	-DCMAKE_BUILD_TYPE=$(BUILD_TYPE) \
+	-G "Ninja Multi-Config" \
+	-DCMAKE_CONFIGURATION_TYPES="Debug;RelWithDebInfo;Asan;UBsan;Msan;Lsan;Tsan" \
+	-DCMAKE_DEFAULT_BUILD_TYPE=$(BUILD_TYPE) \
 	-DCMAKE_INSTALL_PREFIX=$(abspath $(INSTALL_PREFIX)) \
 	-DCMAKE_EXPORT_COMPILE_COMMANDS=1 \
 	$(CMAKE_ARGS) \
@@ -34,10 +35,10 @@ $(BUILD_PATH)/CMakeCache.txt: | $(BUILD_PATH)
 	ln -s $(BUILD_PATH)/compile_commands.json
 
 build: $(BUILD_PATH)/CMakeCache.txt
-	cd $(BUILD_PATH) && ninja -k 0 -v
+	cd $(BUILD_PATH) && ninja -f build-$(BUILD_TYPE).ninja -k 0 -v
 
 install: $(BUILD_PATH)/CMakeCache.txt
-	cd $(BUILD_PATH) && ninja install
+	cd $(BUILD_PATH) && ninja -f build-$(BUILD_TYPE).ninja install
 
 ctest: $(BUILD_PATH)/CMakeCache.txt
 	cd $(BUILD_PATH) && ctest
@@ -51,7 +52,7 @@ cmake: | $(BUILD_PATH)
 	cd $(BUILD_PATH) && $(run-cmake)
 
 clean: $(BUILD_PATH)/CMakeCache.txt
-	cd $(BUILD_PATH) && ninja clean
+	cd $(BUILD_PATH) && ninja -f build-$(BUILD_TYPE).ninja clean
 
 realclean:
 	rm -rf $(BUILD_PATH)

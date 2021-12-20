@@ -7,6 +7,7 @@
 #include <iterator>
 #include <memory>
 #include <tuple>
+#include <type_traits>
 
 template <typename Value>
 class ConsStream;
@@ -452,7 +453,7 @@ auto dot(FuncF&& f, FuncG&& g) {
 template <typename Func, typename Value>
 auto concatMap(Func&& f,  ConsStream<Value> const& stream) {
   //  -> ConsStream<decltype(f(stream.head())::value)> {
-  using ResultOf = std::result_of_t<Func(Value)>;
+    using ResultOf = std::invoke_result_t<Func, Value>;
 
   auto appendF = [f_ = std::forward<Func>(f)]
     (Value v, Delay<ResultOf> const& s) {

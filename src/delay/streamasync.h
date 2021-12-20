@@ -452,7 +452,7 @@ auto dot(FuncF&& f, FuncG&& g) {
 template <typename Func, typename Value>
 auto concatMap(Func&& f,  ConsStreamAsync<Value> const& streamAsync) {
   //  -> ConsStreamAsync<decltype(f(streamAsync.head())::value)> {
-  using ResultOf = std::result_of_t<Func(Value)>;
+    using ResultOf = std::invoke_result_t<Func, Value>;
 
   auto appendF = [f_ = std::forward<Func>(f)]
     (Value v, Delay<ResultOf> const& s) {

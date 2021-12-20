@@ -749,6 +749,8 @@ class NoMove {
 
 } // namespace testing
 
+namespace co_fun {
 template class ConsStreamIterator<int>;
 template class ConsStream<std::string>;
 template class ConsStream<NoDefault>;
+}

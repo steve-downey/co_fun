@@ -9,12 +9,16 @@ TEST(Co_FunContinuationTest, TestGTest) { ASSERT_EQ(1, 1); }
 
 
 TEST(Co_FunContinuationTest, Breathing) {
-    Cont<int, int> c;
-    Cont<int, int> c2;
+    Cont<int> c;
+    Cont<int> c2;
     c2 = c;
 
     int five = 5;
-    Cont<int, int> c3(five);
+    Cont<int> c3(five);
 
     int j = c3([](auto i){return i*2;});
+    EXPECT_EQ(10, j);
+
+    j = c3([](auto i) { return i * 3; });
+    EXPECT_EQ(15, j);
 }

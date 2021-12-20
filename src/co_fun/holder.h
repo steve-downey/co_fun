@@ -115,8 +115,14 @@ struct Holder {
     Holder(Holder&& source)
         : promise_(std::exchange(source.promise_, nullptr)) {}
 
-    Holder(R t) : promise_(nullptr) {
+    Holder(R const& t) : promise_(nullptr) {
         new (std::addressof(result_.wrapper)) Value<R>{t};
+
+        status.store(result_status::value, std::memory_order_release);
+    }
+
+    Holder(R && t) : promise_(nullptr) {
+        new (std::addressof(result_.wrapper)) Value<R>{std::move(t)};
 
         status.store(result_status::value, std::memory_order_release);
     }

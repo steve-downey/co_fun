@@ -10,26 +10,19 @@
 //
 //@DESCRIPTION:
 
-#include <co_fun/holder.h>
+#include <co_fun/thunk.h>
 #include <memory>
+#include <type_traits>
 
 namespace co_fun {
 
-template <typename K, typename R, typename A>
-concept Kont = requires(K k, R r, A a) {
-    r = k(a);
-};
-
-template <typename A, typename R>
+template <typename A>
 class Cont {
-  public:
-    using Continuation = auto(A) -> R;
-    using CTR          = auto(Continuation) -> R;
 
   private:
     struct Promise : public Holder<A>::Promise {
         auto get_return_object() {
-            auto holder = std::make_shared<co_fun::Holder<CTR>>(this);
+            auto holder = std::make_shared<co_fun::Holder<A>>(this);
             return Cont(std::move(holder));
         }
     };
@@ -37,30 +30,25 @@ class Cont {
   public:
     using promise_type = Promise;
 
-  private:
-    bool evaluated() const { return a_ && !a_->unevaluated(); }
-
-    A const& get() const& {
-        if (!evaluated()) {
-            a_->resume();
-        }
-        return a_->get_value();
-    }
-
   public:
-    auto operator()(Continuation k) -> R { return (k)(get()); }
+    template <typename Continuation>
+    auto operator()(Continuation k) -> Thunk<std::invoke_result_t<Continuation, A>> {
+        co_return(k)(a_);
+    }
 
     Cont() : a_() {}
 
-    explicit Cont(A const& a) : a_(std::make_shared<co_fun::Holder<A>>(a)){};
+    explicit Cont(A const& a) : a_(a){};
 
-    explicit Cont(A&& a)
-        : a_(std::make_shared<co_fun::Holder<A>>(std::move(a))) {}
+    explicit Cont(A&& a) : a_(std::move(a)) {}
+
+    explicit Cont(Thunk<A> const& a) : a_(a){};
+    explicit Cont(Thunk<A>&& a) : a_(std::move(a)){};
 
     Cont(std::shared_ptr<co_fun::Holder<A>>&& a) : a_(a) {}
 
   private:
-    std::shared_ptr<co_fun::Holder<A>> a_;
+    Thunk<A> a_;
 };
 
 // ============================================================================
